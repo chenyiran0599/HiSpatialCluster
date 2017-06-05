@@ -3,11 +3,11 @@ Clustering spatial points with algorithm of Fast Search, high performace computi
 
 ## Package Requirements for GPU:
 
-CUDA 7.5 or later; numba and cudatoolkit
+CUDA 7.5 or later; numba and cudatoolkit; python 64bit (using arcgis pro for python 64bit)
 
-install with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
+Install with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
 
-or install with unofficial binaries for python extension packages to avoid compile llvmlite
+Or install with unofficial binaries for python extension packages to avoid compile llvmlite
 
 ## Method Reference
 
