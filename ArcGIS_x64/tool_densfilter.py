@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Density Filter Tool
+
 Created on Thu May 11 11:03:05 2017
 
 @author: cheny
@@ -10,69 +12,68 @@ import arcpy
 import numpy.lib.recfunctions as recfunctions
 import numpy as np
 
-class ClassifyWithCntrTool(object):
+class DensFilterTool(object):
     def __init__(self):
         """Classify Tool"""
-        self.label = "3 Find Center and Classify Tool"
-        self.description = "Find Center and Classify for Fast Search Cluster."
+        self.label = "4 Post Processing - Density Filter"
+        self.description = "Post Processing - Density Filter"
         self.canRunInBackground = True
-        self.cntr_addr=''
-        self.cls_addr=''
 
     def getParameterInfo(self):
         """Define parameter definitions"""
         
         #1
-        paraminput = Parameter(
-                displayName="Input Points",
-                name="in_points",
+        paramclsinput = Parameter(
+                displayName="Input Classified Points",
+                name="in_cls_points",
                 datatype="DEFeatureClass",
                 parameterType="Required",
                 direction="Input")
-        paraminput.filter.list = ["Point"]
-        
+        paramclsinput.filter.list = ["Point"]
+
         #2
+        paramcntrinput = Parameter(
+                displayName="Input Centers Points",
+                name="in_cntr_points",
+                datatype="DEFeatureClass",
+                parameterType="Required",
+                direction="Input")
+        paramcntrinput.filter.list = ["Point"]
+        
+        #3
         paramidfield = Parameter(                
                 displayName="Identifier Field",
                 name="id_field",
                 datatype="Field",
                 parameterType="Required",
                 direction="Input")
-        paramidfield.parameterDependencies = [paraminput.name]
+        paramidfield.parameterDependencies = [paramclsinput.name]
         paramidfield.filter.list = ['Short','Long','OID']
         
-        #3
-        paramparentidfield = Parameter(                
-                displayName="Parent ID Field",
-                name="parent_id_field",
+        #4
+        paramcntridfield = Parameter(                
+                displayName="Center ID Field",
+                name="cntr_id_field",
                 datatype="Field",
                 parameterType="Required",
                 direction="Input")
-        paramparentidfield.parameterDependencies = [paraminput.name]
-        paramparentidfield.filter.list = ['Short','Long']
-        paramparentidfield.value='PARENTID'
-        
-        #4
-        parammultifield = Parameter(                
-                displayName="Multiply Field",
-                name="multi_field",
+        paramcntridfield.parameterDependencies = [paramclsinput.name]
+        paramcntridfield.filter.list = ['Short','Long']
+        paramcntridfield.value='CNTR_ID'
+
+        #5
+        paramdens = Parameter(                
+                displayName="Density Field",
+                name="density_field",
                 datatype="Field",
                 parameterType="Required",
                 direction="Input")
         # Set the filter to accept only fields that are Short or Long type
-        parammultifield.filter.list = ['Short','Long','Float','Single','Double']
-        parammultifield.parameterDependencies = [paraminput.name]
-        parammultifield.value='MULTIPLY'
-        
+        paramdens.filter.list = ['Short','Long','Float','Single','Double']
+        paramdens.parameterDependencies = [paramclsinput.name]
+        paramdens.value='DENSITY'
+                
         #6
-        paramcntroutput = Parameter(
-                displayName="Output Center Points",
-                name="out_cntr_points",
-                datatype="DEFeatureClass",
-                parameterType="Required",
-                direction="Output")
-        
-        #7
         paramclsoutput = Parameter(
                 displayName="Output Classified Points",
                 name="out_cls_points",
@@ -80,50 +81,55 @@ class ClassifyWithCntrTool(object):
                 parameterType="Required",
                 direction="Output")
                 
-        #5
-        paramcntrnum = Parameter(
-                displayName="Maxinum Number of Center Points",
-                name="cntr_num",
-                datatype="GPLong",
+        #7
+        paramdistthrs = Parameter(
+                displayName="Distance for Density Connection",
+                name="distthrs",
+                datatype="GPDouble",
                 parameterType="Required",
                 direction="Input"
                 )
-        paramcntrnum.value=100
+        paramdistthrs.value=30.0
+
+        #8
+        paramdensthrs= Parameter(
+                displayName="Density Threshold for Density Connection",
+                name="densthrs",
+                datatype="GPDouble",
+                parameterType="Required",
+                direction="Input"
+                )
+        paramdensthrs.value=1.5
         
-        params = [paraminput,paramidfield,paramparentidfield,
-                  parammultifield,paramcntrnum,paramcntroutput,paramclsoutput]
+        params = [paramclsinput,paramcntrinput,paramidfield,paramcntridfield,paramdens,paramclsoutput,paramdistthrs,paramdensthrs]
         return params
     
         
     def updateParameters(self, parameters):
-        if parameters[0].altered and not parameters[1].altered:
-            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
+        if parameters[0].altered and not parameters[2].altered:
+            parameters[2].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
             
-        if (parameters[0].altered or parameters[4].altered) and parameters[5].valueAsText==self.cntr_addr:
-            in_fe=parameters[0].valueAsText            
-            cntrnum=parameters[4].value
-            self.cntr_addr=parameters[5].value=in_fe[:len(in_fe)-4]+'_%dcntr'%cntrnum+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_%dcntr'%cntrnum
-            
-        if (parameters[0].altered or parameters[4].altered) and parameters[6].valueAsText==self.cls_addr:
-            in_fe=parameters[0].valueAsText            
-            cntrnum=parameters[4].value
-            self.cls_addr=parameters[6].value=in_fe[:len(in_fe)-4]+'_%dcntr_cls'%cntrnum+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_%dcntr_cls'%cntrnum                
+        if parameters[0].altered and not parameters[5].altered:
+            in_fe=parameters[0].valueAsText   
+            parameters[5].value=in_fe[:len(in_fe)-4]+'_filter'+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_filter'
+                          
         return
 
 
     def execute(self, parameters, messages):
-        input_feature=parameters[0].valueAsText 
-        id_field=parameters[1].valueAsText
-        pid_field=parameters[2].valueAsText
-        multi_field=parameters[3].valueAsText
-        cntr_num=parameters[4].value
+        cls_input=parameters[0].valueAsText 
+        cntr_input=parameters[1].valueAsText
+        id_field=parameters[2].valueAsText
+        cntr_id_field=parameters[3].valueAsText
+        dens_field=parameters[4].valueAsText
+        cls_output=parameters[5].valueAsText
         
-        cntr_output=parameters[5].valueAsText
-        cls_output=parameters[6].valueAsText
+        dist_thrs=parameters[6].value
+        dens_thrs=parameters[7].value
         
-        arcpy.SetProgressor("step", "Find Center and Classify...",0, 6, 1)
+        arcpy.SetProgressor("step", "Density Filtering...",0, 6, 1)
         
-        arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',pid_field,multi_field])
+        arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,[id_field,'SHAPE@X','SHAPE@Y',cntr_id_field,dens_field])
         
         cls_cntr_a=[arrays[id_field][i] for i in arrays[multi_field].argsort()[-cntr_num:]]
         
@@ -163,7 +169,7 @@ class ClassifyWithCntrTool(object):
                 
         arcpy.SetProgressorPosition(4)
         
-        if id_field=='OBJECTID':
+        if id_field==arcpy.Describe(input_feature).OIDFieldName:
             sadnl=list(arrays.dtype.names)
             sadnl[sadnl.index(id_field)]='OID@'
             arrays.dtype.names=tuple(sadnl)

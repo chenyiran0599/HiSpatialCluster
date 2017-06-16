@@ -6,9 +6,11 @@ Created on Thu Apr 27 19:47:13 2017
 
 @author: cheny
 """
-from numba import cuda, float64,float32
+import numpy as np
+import math
         
 def calc_density_gpu(xs,ys,weights,kernel_type,cutoffd=0,sigma=0):
+    from numba import cuda, float64,float32
     @cuda.jit
     def calc_density_gauss_cuda(xs,ys,weights,densitys,sigma,n):
         '''
@@ -76,7 +78,8 @@ def calc_density_gpu(xs,ys,weights,kernel_type,cutoffd=0,sigma=0):
     return dev_denss.copy_to_host()
         
         
-def calc_nrst_dist_gpu(gids,xs,ys,densities):    
+def calc_nrst_dist_gpu(gids,xs,ys,densities):   
+    from numba import cuda, float64,float32
     @cuda.jit
     def calc_nrst_dist_cuda(gids,xs,ys,densities,nrst_dists,parent_gids,n):
         '''

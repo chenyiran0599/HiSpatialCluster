@@ -11,7 +11,7 @@ from arcpy import Parameter
 import arcpy
 from multiprocessing import cpu_count
 import numpy.lib.recfunctions as recfunctions
-from fs_c_findnrstdist import calc_nrst_dist_gpu,calc_nrst_dist_cpu
+
 
 class FindNrstDistTool(object):
     def __init__(self):
@@ -108,13 +108,19 @@ class FindNrstDistTool(object):
         calc_device=parameters[4].valueAsText
         
         arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',dens_field])
-        results=calc_nrst_dist_gpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field])\
-                if calc_device=='GPU' else\
-                calc_nrst_dist_cpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field],parameters[5].value)
+        
+        results=0
+        if calc_device=='GPU':
+            from section_gpu import calc_nrst_dist_gpu
+            results=calc_nrst_dist_gpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field])
+        else:
+            from section_cpu import calc_nrst_dist_cpu
+            results=calc_nrst_dist_cpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field],parameters[5].value)
+        
         struct_arrays=recfunctions.append_fields(recfunctions.append_fields(recfunctions.append_fields(arrays,'NRSTDIST',data=results[0])\
                                                                             ,'PARENTID',data=results[1])\
                                                  ,'MULTIPLY',data=results[0]*arrays[dens_field],usemask=False)            
-        if id_field=='OBJECTID':
+        if id_field==arcpy.Describe(input_feature).OIDFieldName:
             sadnl=list(struct_arrays.dtype.names)
             sadnl[sadnl.index(id_field)]='OID@'
             struct_arrays.dtype.names=tuple(sadnl)
