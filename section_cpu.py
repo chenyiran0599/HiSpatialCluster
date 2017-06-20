@@ -181,19 +181,22 @@ def dens_filter_cpu(cls_input,cntr_input,id_field,cntr_id_field,dens_field,cls_o
 
 def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
     arcpy.env.parallelProcessingFactor=cpu_core
+    arcpy.SetProgressorLabel('Generating Delaunay Triangle...')
     arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,['SHAPE@XY',cntr_id_field])
 #    tri_map={}
 #    boundaries_map={}    
     cid_field_type=[f.type for f in arcpy.Describe(cls_input).fields if f.name==cntr_id_field][0]
-    delauney=Delaunay(arrays['SHAPE@XY']).simplices.copy()
-    arcpy.CreateFeatureclass_management('in_memory','boundary_temp','POLYGON')
+    delaunay=Delaunay(arrays['SHAPE@XY']).simplices.copy()
+    arcpy.CreateFeatureclass_management('in_memory','boundary_temp','POLYGON',spatial_reference=arcpy.Describe(cls_input).spatialReference)
     fc=r'in_memory\boundary_temp'
     arcpy.AddField_management(fc,cntr_id_field,cid_field_type)
     cursor = arcpy.da.InsertCursor(fc, [cntr_id_field,"SHAPE@"])
-    for tri in delauney:
+    arcpy.SetProgressorLabel('Copying Delaunay Triangle...')
+    for tri in delaunay:
         cid=arrays[cntr_id_field][tri[0]]
         if cid == arrays[cntr_id_field][tri[1]] and cid == arrays[cntr_id_field][tri[2]]:
             cursor.insertRow([cid,arcpy.Polygon(arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))])
+    arcpy.SetProgressorLabel('Merging Delaunay Triangle...')
     arcpy.PairwiseDissolve_analysis(fc,boundary_output,cntr_id_field)
     arcpy.Delete_management(fc)
     

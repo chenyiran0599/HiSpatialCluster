@@ -100,5 +100,6 @@ ENV/
 # mypy
 .mypy_cache/
 
-.xml
-.pyc
+*.xml
+*.pyc
+__pycache__/
