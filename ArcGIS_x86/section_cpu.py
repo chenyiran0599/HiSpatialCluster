@@ -10,7 +10,11 @@ import numpy as np
 import math,time
 import arcpy
 from multiprocessing.dummy import Process
-import Queue as queue
+from scipy.spatial import Delaunay
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
     
 def calc_density_cpu(xs,ys,weights,kernel_type,cpu_core,cutoffd=0,sigma=0):
@@ -101,3 +105,129 @@ def calc_nrst_dist_cpu(gids,xs,ys,densities,cpu_core):
         result_nd.append(v[1])
         result_pg.append(v[2])
     return (np.array(result_nd),np.array(result_pg))
+
+def dens_filter_cpu(cls_input,cntr_input,id_field,cntr_id_field,dens_field,cls_output,dist_thrs,dens_thrs,cpu_core):    
+    fieldsarray=[f.name for f in arcpy.Describe(cls_input).fields if f.type!='Geometry']
+    fieldsarray+=['SHAPE@X','SHAPE@Y']
+    
+    arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,fieldsarray)
+    arrays=arrays[arrays[dens_field]>=dens_thrs]
+    
+    centerids=arcpy.da.FeatureClassToNumPyArray(cntr_input,[id_field])
+    
+    arcpy.SetProgressorPosition(1)
+    
+    centers_q=queue.Queue()
+    results_q=queue.Queue()
+    
+    for i in centerids:
+        centers_q.put(i[0])
+    
+    def filterbycenter(centers_q,results_q,arrays,cntr_id_field,id_field):
+        while True:
+            try:
+                center_id=centers_q.get_nowait()
+                cls_a=arrays[arrays[cntr_id_field]==center_id].copy()
+                cls_q=queue.Queue()
+                cls_q.put(center_id)
+                cls_set=set([center_id])
+                while not cls_q.empty():
+                    c_p_id=cls_q.get_nowait()
+                    c_p=cls_a[cls_a[id_field]==c_p_id]
+                    x=c_p['SHAPE@X'][0]
+                    y=c_p['SHAPE@Y'][0]
+                    distpow2_a=(cls_a['SHAPE@X']-x)**2+(cls_a['SHAPE@Y']-y)**2
+                    near_p_id=cls_a[distpow2_a<dist_thrs**2][id_field]
+                    for i in near_p_id:
+                        if i not in cls_set:
+                            cls_q.put(i)
+                            cls_set.add(i)
+                            results_q.put(i)
+                del cls_q,cls_a,cls_set                    
+                
+            except queue.Empty:
+                break;     
+          
+    arcpy.SetProgressor("step", "Density Filtering Points...",0, arrays.shape[0], 1)
+    
+    ts=[]
+    for i in range(cpu_core):
+        t=Process(target=filterbycenter,args=(centers_q,results_q,arrays,cntr_id_field,id_field))
+        t.start()
+        ts.append(t)
+    for t in ts:
+        while t.is_alive():
+            arcpy.SetProgressorPosition(centerids.shape[0]-centers_q.qsize())
+            time.sleep(0.05)
+    
+    results_set=set()
+    while not results_q.empty():
+        results_set.add(results_q.get_nowait())
+    
+    results_a=[]
+    for i in range(arrays.shape[0]):
+        if arrays[id_field][i] in results_set:
+            results_a.append(arrays[i])   
+    
+    if id_field==arcpy.Describe(cls_input).OIDFieldName:
+        sadnl=list(arrays.dtype.names)
+        sadnl[sadnl.index(id_field)]='OID@'
+        arrays.dtype.names=tuple(sadnl)
+        
+    arcpy.da.NumPyArrayToFeatureClass(np.array(results_a,arrays.dtype),cls_output,\
+                                      ('SHAPE@X','SHAPE@Y'),arcpy.Describe(cls_input).spatialReference) 
+    
+    return
+
+def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
+    arcpy.env.parallelProcessingFactor=cpu_core
+    arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,['SHAPE@XY',cntr_id_field])
+#    tri_map={}
+#    boundaries_map={}    
+    cid_field_type=[f.type for f in arcpy.Describe(cls_input).fields if f.name==cntr_id_field][0]
+    delauney=Delaunay(arrays['SHAPE@XY']).simplices.copy()
+    arcpy.CreateFeatureclass_management('in_memory','boundary_temp','POLYGON')
+    fc=r'in_memory\boundary_temp'
+    arcpy.AddField_management(fc,cntr_id_field,cid_field_type)
+    cursor = arcpy.da.InsertCursor(fc, [cntr_id_field,"SHAPE@"])
+    for tri in delauney:
+        cid=arrays[cntr_id_field][tri[0]]
+        if cid == arrays[cntr_id_field][tri[1]] and cid == arrays[cntr_id_field][tri[2]]:
+            cursor.insertRow([cid,arcpy.Polygon(arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))])
+    arcpy.PairwiseDissolve_analysis(fc,boundary_output,cntr_id_field)
+    arcpy.Delete_management(fc)
+    
+    return
+    
+
+
+
+
+
+
+
+
+
+#            if cid in tri_map.keys():
+#                tri_map[cid].append([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri])
+##                boundaries_map[cid].union(
+##                        arcpy.Polygon(
+##                                arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri])))
+#            else:
+#                tri_map[cid]=[[arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]]
+##                boundaries_map[cid]=arcpy.Polygon(
+##                        arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))
+#    
+#    def union_cls_tri(cid):
+#        ps=tri_map[cid]
+#        b=arcpy.Polygon(arcpy.Array(ps[0]))
+#        for i in range(1,len(ps)):
+#            b.union(arcpy.Polygon(arcpy.Array(ps[i])))
+#        return (cid,b)
+#    
+#    tp=Pool(cpu_core)
+#    results=tp.map(union_cls_tri,tri_map.keys())
+
+    
+    
+    

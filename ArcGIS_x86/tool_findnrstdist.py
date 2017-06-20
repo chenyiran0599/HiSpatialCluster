@@ -11,6 +11,7 @@ from arcpy import Parameter
 import arcpy
 from multiprocessing import cpu_count
 import numpy.lib.recfunctions as recfunctions
+import sys
 
 
 class FindNrstDistTool(object):
@@ -73,7 +74,6 @@ class FindNrstDistTool(object):
                 )
         paramdevice.filter.list=['CPU','GPU']
         paramdevice.value='CPU'
-        paramdevice.enable=0
         
         #6
         paramcpuc = Parameter(
@@ -97,7 +97,12 @@ class FindNrstDistTool(object):
         if parameters[4].value=='CPU':
             parameters[5].enabled=1
         else:
-            parameters[5].enabled=0     
+            parameters[5].enabled=0   
+            
+        if parameters[0].altered and not parameters[3].altered:
+            in_fe=parameters[0].valueAsText   
+            parameters[3].value=in_fe[:len(in_fe)-4]+'_nrstdist'+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_nrstdist'
+        
         return
 
 
@@ -108,20 +113,27 @@ class FindNrstDistTool(object):
         output_feature=parameters[3].valueAsText
         calc_device=parameters[4].valueAsText
         
+        if '64 bit' not in sys.version and calc_device=='GPU':
+            arcpy.AddError('Platform is 32bit and has no support for GPU/CUDA.')
+            return
+        
         arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',dens_field])
         
         results=0
-        if calc_device=='CPU':
+        if calc_device=='GPU':
+            from section_gpu import calc_nrst_dist_gpu
+            results=calc_nrst_dist_gpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field])
+        else:
             from section_cpu import calc_nrst_dist_cpu
             results=calc_nrst_dist_cpu(arrays[id_field],arrays['SHAPE@X'],arrays['SHAPE@Y'],arrays[dens_field],parameters[5].value)
         
         struct_arrays=recfunctions.append_fields(recfunctions.append_fields(recfunctions.append_fields(arrays,'NRSTDIST',data=results[0])\
                                                                             ,'PARENTID',data=results[1])\
                                                  ,'MULTIPLY',data=results[0]*arrays[dens_field],usemask=False)            
-        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(struct_arrays.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            struct_arrays.dtype.names=tuple(sadnl)
+#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(struct_arrays.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            struct_arrays.dtype.names=tuple(sadnl)
             
         arcpy.da.NumPyArrayToFeatureClass(struct_arrays,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)   

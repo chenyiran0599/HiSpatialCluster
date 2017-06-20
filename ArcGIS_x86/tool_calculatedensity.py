@@ -10,6 +10,7 @@ from arcpy import Parameter
 import arcpy
 from multiprocessing import cpu_count
 import numpy.lib.recfunctions as recfunctions
+import sys
 
 class CalculateDensityTool(object):
     def __init__(self):
@@ -101,7 +102,6 @@ class CalculateDensityTool(object):
                 )
         paramdevice.filter.list=['CPU','GPU']
         paramdevice.value='CPU'
-        paramdevice.enabled=0
         
         #9
         paramcpuc = Parameter(
@@ -134,7 +134,12 @@ class CalculateDensityTool(object):
         if params[7].value=='CPU':
             params[8].enabled=1
         else:
-            params[8].enabled=0     
+            params[8].enabled=0
+        
+        if parameters[0].altered and not parameters[3].altered:
+            in_fe=parameters[0].valueAsText   
+            parameters[3].value=in_fe[:len(in_fe)-4]+'_dens'+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_dens'
+        
         return
 
 
@@ -148,10 +153,19 @@ class CalculateDensityTool(object):
         kernel_type=parameters[4].valueAsText
         calc_device=parameters[7].valueAsText
         
+        if '64 bit' not in sys.version and calc_device=='GPU':
+            arcpy.AddError('Platform is 32bit and has no support for GPU/CUDA.')
+            return
+        
         #calculation          
         arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',weight_field])
         densities=0
-        if calc_device=='CPU':
+        if calc_device=='GPU':            
+            from section_gpu import calc_density_gpu
+            densities=calc_density_gpu(arrays['SHAPE@X'],arrays['SHAPE@Y'],\
+                                   arrays[weight_field],kernel_type,\
+                                   cutoffd=parameters[5].value,sigma=parameters[6].value)
+        else:
             from section_cpu import calc_density_cpu
             densities=calc_density_cpu(arrays['SHAPE@X'],arrays['SHAPE@Y'],\
                                    arrays[weight_field],kernel_type,\
@@ -160,10 +174,10 @@ class CalculateDensityTool(object):
         result_struct=recfunctions.append_fields(recfunctions.drop_fields(arrays,weight_field),\
                                                  'DENSITY',data=densities,usemask=False)
         
-        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(result_struct.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            result_struct.dtype.names=tuple(sadnl)
+#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(result_struct.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            result_struct.dtype.names=tuple(sadnl)
         
         arcpy.da.NumPyArrayToFeatureClass(result_struct,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)  

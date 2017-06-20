@@ -99,12 +99,12 @@ class ClassifyWithCntrTool(object):
         if parameters[0].altered and not parameters[1].altered:
             parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
             
-        if (parameters[0].altered or parameters[4].altered) and parameters[5].valueAsText==self.cntr_addr:
+        if (parameters[0].altered or parameters[4].altered) and not parameters[5].altered:#parameters[5].valueAsText==self.cntr_addr:
             in_fe=parameters[0].valueAsText            
             cntrnum=parameters[4].value
             self.cntr_addr=parameters[5].value=in_fe[:len(in_fe)-4]+'_%dcntr'%cntrnum+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_%dcntr'%cntrnum
             
-        if (parameters[0].altered or parameters[4].altered) and parameters[6].valueAsText==self.cls_addr:
+        if (parameters[0].altered or parameters[4].altered) and not parameters[6].altered:#parameters[6].valueAsText==self.cls_addr:
             in_fe=parameters[0].valueAsText            
             cntrnum=parameters[4].value
             self.cls_addr=parameters[6].value=in_fe[:len(in_fe)-4]+'_%dcntr_cls'%cntrnum+in_fe[-4:] if in_fe[-3:]=='shp' else in_fe+'_%dcntr_cls'%cntrnum                
@@ -123,7 +123,7 @@ class ClassifyWithCntrTool(object):
         
         arcpy.SetProgressor("step", "Find Center and Classify...",0, 6, 1)
         
-        arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',pid_field,multi_field])
+        arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,['*'])
         
         cls_cntr_a=[arrays[id_field][i] for i in arrays[multi_field].argsort()[-cntr_num:]]
         
@@ -131,13 +131,14 @@ class ClassifyWithCntrTool(object):
         
         cls_tree={}
 
-        for record in arrays:
-            if record[0] not in cls_cntr_a:
-                pgid=record[3]
+        for i in range(len(arrays)):
+            idx=arrays[id_field][i]
+            if idx not in cls_cntr_a:
+                pgid=arrays[pid_field][i]
                 if pgid in cls_tree.keys():
-                    cls_tree[pgid].append(record[0])
+                    cls_tree[pgid].append(idx)
                 else:
-                    cls_tree[pgid]=[record[0]]
+                    cls_tree[pgid]=[idx]
         
         arcpy.SetProgressorPosition(2)
         
@@ -156,38 +157,26 @@ class ClassifyWithCntrTool(object):
         
         result_cls=[]
         result_cntr=[]
-        for record in arrays:
-            result_cls.append((record[0],result_map[record[0]]))
-            if record[0] in cls_cntr_a:
-                result_cntr.append(record)
+        for i in range(len(arrays)):
+            idx=arrays[id_field][i]
+            result_cls.append(result_map[idx])
+            if idx in cls_cntr_a:
+                result_cntr.append(arrays[i])
                 
         arcpy.SetProgressorPosition(4)
         
-        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(arrays.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            arrays.dtype.names=tuple(sadnl)
-        
-        arcpy.da.NumPyArrayToFeatureClass(np.array(result_cntr,arrays.dtype),cntr_output,\
-                                          ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference) 
-        
+#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(arrays.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            arrays.dtype.names=tuple(sadnl)
+
+        result_struct=recfunctions.append_fields(arrays,'CNTR_ID',data=np.array(result_cls),usemask=False)
+        arcpy.da.NumPyArrayToFeatureClass(result_struct,cls_output,('Shape'),arcpy.Describe(input_feature).spatialReference)        
+       
         arcpy.SetProgressorPosition(5)
         
-        result_table_a=np.array(result_cls,dtype=np.dtype([('ORIGINID',arrays[0].dtype),('CNTR_ID',arrays[0].dtype)]))
-        arcpy.env.workspace = 'in_memory'
-        tmp_table_name='cls_tmp_table'
-        tmp_lyr_name='origin_point_tmp_layer'
-        arcpy.da.NumPyArrayToTable(result_table_a,tmp_table_name)
-        arcpy.MakeFeatureLayer_management(input_feature,tmp_lyr_name)
-        arcpy.AddJoin_management(tmp_lyr_name,id_field,tmp_table_name,'ORIGINID','KEEP_COMMON')
-        arcpy.CopyFeatures_management(tmp_lyr_name,cls_output)
-        arcpy.Delete_management(tmp_table_name)
-        arcpy.Delete_management(tmp_lyr_name)
-        
-#        result_struct=recfunctions.append_fields(recfunctions.drop_fields(recfunctions.drop_fields(arrays,pid_field)\
-#                                                                          ,multi_field)\
-#                                                 ,'CNTR_ID',data=np.array(result_cls),usemask=False)
-#        arcpy.da.NumPyArrayToFeatureClass(result_struct,cls_output,('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)        
+        arcpy.da.NumPyArrayToFeatureClass(np.array(result_cntr,arrays.dtype),cntr_output,\
+                                          ('Shape'),arcpy.Describe(input_feature).spatialReference) 
         
         arcpy.SetProgressorPosition(6)
         

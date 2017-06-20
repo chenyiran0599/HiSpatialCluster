@@ -9,8 +9,8 @@ Created on Thu May 11 11:03:05 2017
 
 from arcpy import Parameter
 import arcpy
-import numpy.lib.recfunctions as recfunctions
-import numpy as np
+from section_cpu import dens_filter_cpu
+from multiprocessing import cpu_count
 
 class DensFilterTool(object):
     def __init__(self):
@@ -89,7 +89,7 @@ class DensFilterTool(object):
                 parameterType="Required",
                 direction="Input"
                 )
-        paramdistthrs.value=30.0
+        paramdistthrs.value=100.0
 
         #8
         paramdensthrs= Parameter(
@@ -99,9 +99,33 @@ class DensFilterTool(object):
                 parameterType="Required",
                 direction="Input"
                 )
-        paramdensthrs.value=1.5
+        paramdensthrs.value=1.2
         
-        params = [paramclsinput,paramcntrinput,paramidfield,paramcntridfield,paramdens,paramclsoutput,paramdistthrs,paramdensthrs]
+        #9
+        paramdevice = Parameter(
+                displayName="Device for Calculation",
+                name="calc_device",
+                datatype="GPString",
+                parameterType="Required",
+                direction="Input"
+                )
+        paramdevice.filter.list=['CPU']
+        paramdevice.value='CPU'
+        
+        #10
+        paramcpuc = Parameter(
+                displayName="CPU Parallel Cores",
+                name="cpu_cores",
+                datatype="GPLong",
+                parameterType="Required",
+                direction="Input"
+                )
+        paramcpuc.value=cpu_count()
+        
+        params = [paramclsinput,paramcntrinput,paramidfield,
+                  paramcntridfield,paramdens,paramclsoutput,
+                  paramdistthrs,paramdensthrs,paramdevice,
+                  paramcpuc]
         return params
     
         
@@ -126,64 +150,10 @@ class DensFilterTool(object):
         
         dist_thrs=parameters[6].value
         dens_thrs=parameters[7].value
+        cpu_core=parameters[9].value
         
-        arcpy.SetProgressor("step", "Density Filtering...",0, 6, 1)
-        
-        arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,[id_field,'SHAPE@X','SHAPE@Y',cntr_id_field,dens_field])
-        
-        cls_cntr_a=[arrays[id_field][i] for i in arrays[multi_field].argsort()[-cntr_num:]]
-        
-        arcpy.SetProgressorPosition(1)
-        
-        cls_tree={}
-
-        for record in arrays:
-            if record[0] not in cls_cntr_a:
-                pgid=record[3]
-                if pgid in cls_tree.keys():
-                    cls_tree[pgid].append(record[0])
-                else:
-                    cls_tree[pgid]=[record[0]]
-        
-        arcpy.SetProgressorPosition(2)
-        
-        result_map={}
-                
-        def appendallchild(cls_tree,result_map,cur_gid,cntr_gid):
-            result_map[cur_gid]=cntr_gid
-            if cur_gid in cls_tree.keys():
-                for c_gid in cls_tree[cur_gid]:
-                    appendallchild(cls_tree,result_map,c_gid,cntr_gid)
-                
-        for cntr_gid in cls_cntr_a:
-            appendallchild(cls_tree,result_map,cntr_gid,cntr_gid)
-            
-        arcpy.SetProgressorPosition(3)
-        
-        result_cls=[]
-        result_cntr=[]
-        for record in arrays:
-            result_cls.append(result_map[record[0]])
-            if record[0] in cls_cntr_a:
-                result_cntr.append(record)
-                
-        arcpy.SetProgressorPosition(4)
-        
-        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(arrays.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            arrays.dtype.names=tuple(sadnl)
-        
-        arcpy.da.NumPyArrayToFeatureClass(np.array(result_cntr,arrays.dtype),cntr_output,\
-                                          ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference) 
-        
-        arcpy.SetProgressorPosition(5)
-        
-        result_struct=recfunctions.append_fields(recfunctions.drop_fields(recfunctions.drop_fields(arrays,pid_field)\
-                                                                          ,multi_field)\
-                                                 ,'CNTR_ID',data=np.array(result_cls),usemask=False)
-        arcpy.da.NumPyArrayToFeatureClass(result_struct,cls_output,('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)        
-        
-        arcpy.SetProgressorPosition(6)
+        dens_filter_cpu(cls_input,cntr_input,id_field,
+                        cntr_id_field,dens_field,cls_output,
+                        dist_thrs,dens_thrs,cpu_core)
         
         return
