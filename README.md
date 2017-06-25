@@ -1,17 +1,23 @@
 # spatial_cluster_fs
 Clustering spatial points with algorithm of Fast Search, high performace computing implements of CUDA or parallel in CPU, and runnable implements on python standalone or arcgis.
 
+## Package Requirements for CPU:
+
+All Package Requirements has been met with ArcGIS 10.1 and later or ArcGIS Pro.
+
 ## Package Requirements for GPU:
 
 CUDA 7.5 or later; numba and cudatoolkit; python 64bit (using arcgis pro for python 64bit)
 
-Install with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
+Install cudatoolkit in Python with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
 
 Or install with unofficial binaries for python extension packages to avoid compile llvmlite
 
-## Toolbox Version
+## Toolbox Note
 
-There's two version of toolbox. One is for ArcGIS Desktop that is 32bit and with Python 2.7, which has no support for CUDA. Another is for ArcGIS Pro that is 64bit and with Python 3, which is full support with CUDA.
+Codes are fixed to fit both Python 2 & 3, which means it is suitable for both ArcGIS Desktop with 32bit Python 2 and ArcGIS Pro with 64bit Python 3.
+
+Because CUDA 7.5 and later requires 64bit platform, note that 32bit Python has no support for CUDA, but this tool in 32bit environments still has the parallel acceleration in CPU. It is possible to use GPU in ArcGIS Desktop with Backgroud Processing 64bit, but has not been proved yet.
 
 ## Method Reference
 
