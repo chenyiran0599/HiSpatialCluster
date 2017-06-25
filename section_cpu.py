@@ -169,7 +169,7 @@ def dens_filter_cpu(cls_input,cntr_input,id_field,cntr_id_field,dens_field,cls_o
         if arrays[id_field][i] in results_set:
             results_a.append(arrays[i])   
     
-    if id_field==arcpy.Describe(cls_input).OIDFieldName:
+    if '64 bit' in sys.version and id_field==arcpy.Describe(cls_input).OIDFieldName:
         sadnl=list(arrays.dtype.names)
         sadnl[sadnl.index(id_field)]='OID@'
         arrays.dtype.names=tuple(sadnl)
@@ -183,15 +183,14 @@ def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
     arcpy.env.parallelProcessingFactor=cpu_core
     arcpy.SetProgressorLabel('Generating Delaunay Triangle...')
     arrays=arcpy.da.FeatureClassToNumPyArray(cls_input,['SHAPE@XY',cntr_id_field])
-#    tri_map={}
-#    boundaries_map={}    
+   
     cid_field_type=[f.type for f in arcpy.Describe(cls_input).fields if f.name==cntr_id_field][0]
     delaunay=Delaunay(arrays['SHAPE@XY']).simplices.copy()
     arcpy.CreateFeatureclass_management('in_memory','boundary_temp','POLYGON',spatial_reference=arcpy.Describe(cls_input).spatialReference)
     fc=r'in_memory\boundary_temp'
     arcpy.AddField_management(fc,cntr_id_field,cid_field_type)
     cursor = arcpy.da.InsertCursor(fc, [cntr_id_field,"SHAPE@"])
-    arcpy.SetProgressorLabel('Copying Delaunay Triangle...')
+    arcpy.SetProgressorLabel('Copying Delaunay Triangle to Temp Layer...')
     for tri in delaunay:
         cid=arrays[cntr_id_field][tri[0]]
         if cid == arrays[cntr_id_field][tri[1]] and cid == arrays[cntr_id_field][tri[2]]:
@@ -201,36 +200,3 @@ def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
     arcpy.Delete_management(fc)
     
     return
-    
-
-
-
-
-
-
-
-
-
-#            if cid in tri_map.keys():
-#                tri_map[cid].append([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri])
-##                boundaries_map[cid].union(
-##                        arcpy.Polygon(
-##                                arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri])))
-#            else:
-#                tri_map[cid]=[[arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]]
-##                boundaries_map[cid]=arcpy.Polygon(
-##                        arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))
-#    
-#    def union_cls_tri(cid):
-#        ps=tri_map[cid]
-#        b=arcpy.Polygon(arcpy.Array(ps[0]))
-#        for i in range(1,len(ps)):
-#            b.union(arcpy.Polygon(arcpy.Array(ps[i])))
-#        return (cid,b)
-#    
-#    tp=Pool(cpu_core)
-#    results=tp.map(union_cls_tri,tri_map.keys())
-
-    
-    
-    

@@ -116,6 +116,8 @@ class FindNrstDistTool(object):
         if '64 bit' not in sys.version and calc_device=='GPU':
             arcpy.AddError('Platform is 32bit and has no support for GPU/CUDA.')
             return
+
+        arcpy.SetProgressorLabel('Calculating Point with Higher Density ...')
         
         arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',dens_field])
         
@@ -130,10 +132,10 @@ class FindNrstDistTool(object):
         struct_arrays=recfunctions.append_fields(recfunctions.append_fields(recfunctions.append_fields(arrays,'NRSTDIST',data=results[0])\
                                                                             ,'PARENTID',data=results[1])\
                                                  ,'MULTIPLY',data=results[0]*arrays[dens_field],usemask=False)            
-#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-#            sadnl=list(struct_arrays.dtype.names)
-#            sadnl[sadnl.index(id_field)]='OID@'
-#            struct_arrays.dtype.names=tuple(sadnl)
+        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+            sadnl=list(struct_arrays.dtype.names)
+            sadnl[sadnl.index(id_field)]='OID@'
+            struct_arrays.dtype.names=tuple(sadnl)
             
         arcpy.da.NumPyArrayToFeatureClass(struct_arrays,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)   

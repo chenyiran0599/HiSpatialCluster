@@ -165,10 +165,10 @@ class ClassifyWithCntrTool(object):
                 
         arcpy.SetProgressorPosition(4)
         
-#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-#            sadnl=list(arrays.dtype.names)
-#            sadnl[sadnl.index(id_field)]='OID@'
-#            arrays.dtype.names=tuple(sadnl)
+        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+            sadnl=list(arrays.dtype.names)
+            sadnl[sadnl.index(id_field)]='OID@'
+            arrays.dtype.names=tuple(sadnl)
 
         result_struct=recfunctions.append_fields(arrays,'CNTR_ID',data=np.array(result_cls),usemask=False)
         arcpy.da.NumPyArrayToFeatureClass(result_struct,cls_output,('Shape'),arcpy.Describe(input_feature).spatialReference)        

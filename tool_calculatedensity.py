@@ -156,6 +156,8 @@ class CalculateDensityTool(object):
         if '64 bit' not in sys.version and calc_device=='GPU':
             arcpy.AddError('Platform is 32bit and has no support for GPU/CUDA.')
             return
+
+        arcpy.SetProgressorLabel('Calculating Density...')
         
         #calculation          
         arrays=arcpy.da.FeatureClassToNumPyArray(input_feature,[id_field,'SHAPE@X','SHAPE@Y',weight_field])
@@ -174,10 +176,10 @@ class CalculateDensityTool(object):
         result_struct=recfunctions.append_fields(recfunctions.drop_fields(arrays,weight_field),\
                                                  'DENSITY',data=densities,usemask=False)
         
-#        if id_field==arcpy.Describe(input_feature).OIDFieldName:
-#            sadnl=list(result_struct.dtype.names)
-#            sadnl[sadnl.index(id_field)]='OID@'
-#            result_struct.dtype.names=tuple(sadnl)
+        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+            sadnl=list(result_struct.dtype.names)
+            sadnl[sadnl.index(id_field)]='OID@'
+            result_struct.dtype.names=tuple(sadnl)
         
         arcpy.da.NumPyArrayToFeatureClass(result_struct,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)  
