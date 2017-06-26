@@ -9,6 +9,7 @@ from arcpy import Parameter
 import arcpy
 import numpy.lib.recfunctions as recfunctions
 import numpy as np
+import sys
 
 class ClassifyWithCntrTool(object):
     def __init__(self):

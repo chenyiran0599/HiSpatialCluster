@@ -6,6 +6,7 @@ Created on Thu Apr 27 19:47:13 2017
 
 @author: cheny
 """
+import sys
 import numpy as np
 import math,time
 import arcpy

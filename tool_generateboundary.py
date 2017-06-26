@@ -8,7 +8,6 @@ Created on Thu May 11 11:03:05 2017
 """
 
 from arcpy import Parameter
-import arcpy
 from section_cpu import generate_cls_boundary
 from multiprocessing import cpu_count
 
