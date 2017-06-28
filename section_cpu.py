@@ -191,12 +191,13 @@ def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
     fc=r'in_memory\boundary_temp'
     arcpy.AddField_management(fc,cntr_id_field,cid_field_type)
     cursor = arcpy.da.InsertCursor(fc, [cntr_id_field,"SHAPE@"])
-    arcpy.SetProgressorLabel('Copying Delaunay Triangle to Temp Layer...')
+    arcpy.SetProgressor("step", "Copying Delaunay Triangle to Temp Layer...",0, delaunay.shape[0], 1)
     for tri in delaunay:
+        arcpy.SetProgressorPosition()
         cid=arrays[cntr_id_field][tri[0]]
         if cid == arrays[cntr_id_field][tri[1]] and cid == arrays[cntr_id_field][tri[2]]:
             cursor.insertRow([cid,arcpy.Polygon(arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))])
-    arcpy.SetProgressorLabel('Merging Delaunay Triangle...')
+    arcpy.SetProgressor('default','Merging Delaunay Triangle...')
     arcpy.PairwiseDissolve_analysis(fc,boundary_output,cntr_id_field)
     arcpy.Delete_management(fc)
     

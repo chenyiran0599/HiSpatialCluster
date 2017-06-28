@@ -16,14 +16,13 @@ note: GPU is used in this example. so packages list after is required: numba, cu
 '''
 
 import psycopg2
-from fs_c_calcdens import calc_density_gpu
-from fs_c_findnrstdist import calc_nrst_dist_gpu
+from section_gpu import calc_density_gpu, calc_nrst_dist_gpu
 import numpy as np
 
 '''
 define the class num.
 '''
-CLS_NUM=600
+CLS_NUM=100
 
 '''
 connect to postgresql/postgis.
@@ -38,7 +37,7 @@ note: the coordinates must be in projected coordinate system. EPSG:4528 is CGCS2
 '''
 cur.execute('''
             SELECT gid,st_x(st_transform(geom,4528)),st_y(st_transform(geom,4528)),weight
-            from point_geometry_table
+            from flickr_sh_wt
             ''')
 result=cur.fetchall()
 
@@ -62,7 +61,7 @@ note: params can be modified.
 '''
 density=calc_density_gpu(np.array(xs,np.float),np.array(ys,np.float),np.array(weights,np.int),'GAUSS',sigma=15)
 #ndresult is an tuple with (nrst_dist, parent_gid)
-ndresult=calc_nrst_dist_gpu(np.array(ids,np.int).astype(np.uint32),np.array(xs,np.float),np.array(ys,np.float),density)
+ndresult=calc_nrst_dist_gpu(np.array(ids,np.int),np.array(xs,np.float),np.array(ys,np.float),density)
 
 '''
 find the class center.
