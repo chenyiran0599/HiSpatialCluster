@@ -48,7 +48,7 @@ class DensFilterTool(object):
                 parameterType="Required",
                 direction="Input")
         paramidfield.parameterDependencies = [paramclsinput.name]
-        paramidfield.filter.list = ['Short','Long','OID']
+        paramidfield.filter.list = ['Short','Long']
         
         #4
         paramcntridfield = Parameter(                

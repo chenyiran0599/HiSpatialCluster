@@ -42,7 +42,7 @@ class FindNrstDistTool(object):
                 parameterType="Required",
                 direction="Input")
         paramidfield.parameterDependencies = [paraminput.name]
-        paramidfield.filter.list = ['Short','Long','OID']
+        paramidfield.filter.list = ['Short','Long']
         
         #3
         paramdens = Parameter(                
