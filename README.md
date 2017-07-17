@@ -11,7 +11,7 @@ CUDA 7.5 or later; numba and cudatoolkit; python 64bit (using arcgis pro for pyt
 
 Install cudatoolkit in Python with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
 
-Or install with unofficial binaries for python extension packages to avoid compile llvmlite
+Or install with unofficial binaries for python extension packages to avoid compiling llvmlite
 
 ## Toolbox Note
 
