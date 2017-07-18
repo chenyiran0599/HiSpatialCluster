@@ -170,10 +170,10 @@ def dens_filter_cpu(cls_input,cntr_input,id_field,cntr_id_field,dens_field,cls_o
         if arrays[id_field][i] in results_set:
             results_a.append(arrays[i])   
     
-    if '64 bit' in sys.version and id_field==arcpy.Describe(cls_input).OIDFieldName:
-        sadnl=list(arrays.dtype.names)
-        sadnl[sadnl.index(id_field)]='OID@'
-        arrays.dtype.names=tuple(sadnl)
+#    if '64 bit' in sys.version and id_field==arcpy.Describe(cls_input).OIDFieldName:
+#        sadnl=list(arrays.dtype.names)
+#        sadnl[sadnl.index(id_field)]='OID@'
+#        arrays.dtype.names=tuple(sadnl)
         
     arcpy.da.NumPyArrayToFeatureClass(np.array(results_a,arrays.dtype),cls_output,\
                                       ('SHAPE@X','SHAPE@Y'),arcpy.Describe(cls_input).spatialReference) 

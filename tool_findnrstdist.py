@@ -91,8 +91,8 @@ class FindNrstDistTool(object):
     
     def updateParameters(self, parameters):
         
-        if parameters[0].altered and not parameters[1].altered:
-            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
+#        if parameters[0].altered and not parameters[1].altered:
+#            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
         
         if parameters[4].value=='CPU':
             parameters[5].enabled=1
@@ -132,10 +132,10 @@ class FindNrstDistTool(object):
         struct_arrays=recfunctions.append_fields(recfunctions.append_fields(recfunctions.append_fields(arrays,'NRSTDIST',data=results[0])\
                                                                             ,'PARENTID',data=results[1])\
                                                  ,'MULTIPLY',data=results[0]*arrays[dens_field],usemask=False)            
-        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(struct_arrays.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            struct_arrays.dtype.names=tuple(sadnl)
+#        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(struct_arrays.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            struct_arrays.dtype.names=tuple(sadnl)
             
         arcpy.da.NumPyArrayToFeatureClass(struct_arrays,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)   

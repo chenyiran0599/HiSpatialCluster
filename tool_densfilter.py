@@ -130,8 +130,8 @@ class DensFilterTool(object):
     
         
     def updateParameters(self, parameters):
-        if parameters[0].altered and not parameters[2].altered:
-            parameters[2].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
+#        if parameters[0].altered and not parameters[2].altered:
+#            parameters[2].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
             
         if parameters[0].altered and not parameters[5].altered:
             in_fe=parameters[0].valueAsText   

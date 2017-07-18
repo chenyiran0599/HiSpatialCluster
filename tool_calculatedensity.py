@@ -121,8 +121,8 @@ class CalculateDensityTool(object):
     def updateParameters(self, parameters):
         params=parameters
         
-        if parameters[0].altered and not parameters[1].altered:
-            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
+#        if parameters[0].altered and not parameters[1].altered:
+#            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
                 
         if params[4].value=='CUT_OFF':
             params[5].enabled=1
@@ -176,10 +176,10 @@ class CalculateDensityTool(object):
         result_struct=recfunctions.append_fields(recfunctions.drop_fields(arrays,weight_field),\
                                                  'DENSITY',data=densities,usemask=False)
         
-        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(result_struct.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            result_struct.dtype.names=tuple(sadnl)
+#        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(result_struct.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            result_struct.dtype.names=tuple(sadnl)
         
         arcpy.da.NumPyArrayToFeatureClass(result_struct,output_feature,\
                                           ('SHAPE@X','SHAPE@Y'),arcpy.Describe(input_feature).spatialReference)  

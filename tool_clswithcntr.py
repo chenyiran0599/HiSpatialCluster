@@ -97,8 +97,8 @@ class ClassifyWithCntrTool(object):
     
         
     def updateParameters(self, parameters):
-        if parameters[0].altered and not parameters[1].altered:
-            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
+#        if parameters[0].altered and not parameters[1].altered:
+#            parameters[1].value=arcpy.Describe(parameters[0].valueAsText).OIDFieldName
             
         if (parameters[0].altered or parameters[4].altered) and not parameters[5].altered:#parameters[5].valueAsText==self.cntr_addr:
             in_fe=parameters[0].valueAsText            
@@ -166,10 +166,10 @@ class ClassifyWithCntrTool(object):
                 
         arcpy.SetProgressorPosition(4)
         
-        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
-            sadnl=list(arrays.dtype.names)
-            sadnl[sadnl.index(id_field)]='OID@'
-            arrays.dtype.names=tuple(sadnl)
+#        if '64 bit' in sys.version and id_field==arcpy.Describe(input_feature).OIDFieldName:
+#            sadnl=list(arrays.dtype.names)
+#            sadnl[sadnl.index(id_field)]='OID@'
+#            arrays.dtype.names=tuple(sadnl)
 
         result_struct=recfunctions.append_fields(arrays,'CNTR_ID',data=np.array(result_cls),usemask=False)
         arcpy.da.NumPyArrayToFeatureClass(result_struct,cls_output,('Shape'),arcpy.Describe(input_feature).spatialReference)        
