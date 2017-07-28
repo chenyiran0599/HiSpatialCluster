@@ -16,7 +16,7 @@ class CalculateDensityTool(object):
     def __init__(self):
         """Calculate Density Tool"""
         self.label = "1 Calculate Density Tool"
-        self.description = "Calculate Density for Fast Search Cluster."
+        self.description = "Calculate Density for HiSpatialCluster."
         self.canRunInBackground = True
 
     def getParameterInfo(self):

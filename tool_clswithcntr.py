@@ -14,8 +14,8 @@ import sys
 class ClassifyWithCntrTool(object):
     def __init__(self):
         """Classify Tool"""
-        self.label = "3 Find Center and Classify Tool"
-        self.description = "Find Center and Classify for Fast Search Cluster."
+        self.label = "3 Find Centers and Classify Tool"
+        self.description = "Find Centers and Classify for HiSpatialCluster."
         self.canRunInBackground = True
         self.cntr_addr=''
         self.cls_addr=''
