@@ -11,7 +11,7 @@ Created on Tue May  9 11:47:05 2017
 note: GPU is used in this example. so packages list after is required: numba, cudatoolkit with CUDA7.5 or later.
           you can install in anaconda using 'conda install numba' and 'conda install -c numba cudatoolkit=8.0'
                                       or using Unofficial Binaries for Python Extension Packages
-      if CPU is wanted, the arcpy import and using in file 'fs_c_calcdens.py' and 'fs_c_findnrstdist.py' should be removed.
+      if CPU is required, the arcpy import and using in file 'fs_c_calcdens.py' and 'fs_c_findnrstdist.py' should be removed.
           arcpy in these files is only for enable the progressor bar and is not refered by calculation.
 '''
 
