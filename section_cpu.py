@@ -198,10 +198,10 @@ def generate_cls_boundary(cls_input,cntr_id_field,boundary_output,cpu_core):
         if cid == arrays[cntr_id_field][tri[1]] and cid == arrays[cntr_id_field][tri[2]]:
             cursor.insertRow([cid,arcpy.Polygon(arcpy.Array([arcpy.Point(*arrays['SHAPE@XY'][i]) for i in tri]))])
     arcpy.SetProgressor('default','Merging Delaunay Triangle...')
-	if '64 bit' in sys.version:
-		arcpy.PairwiseDissolve_analysis(fc,boundary_output,cntr_id_field)
-	else:
-		arcpy.Dissolve_management(fc,boundary_output,cntr_id_field)
+    if '64 bit' in sys.version:
+        arcpy.PairwiseDissolve_analysis(fc,boundary_output,cntr_id_field)
+    else:
+        arcpy.Dissolve_management(fc,boundary_output,cntr_id_field)
     arcpy.Delete_management(fc)
     
     return
