@@ -14,7 +14,7 @@ from multiprocessing import cpu_count
 class ClsBoundaryTool(object):
     def __init__(self):
         """Boundaries Tool"""
-        self.label = "5 Post Processing - Generate Class Boundaries"
+        self.label = "5 Generating Class Boundaries Tool"
         self.description = "Post Processing - Generate Class Boundaries"
         self.canRunInBackground = True
 

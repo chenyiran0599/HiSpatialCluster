@@ -15,7 +15,7 @@ from multiprocessing import cpu_count
 class DensFilterTool(object):
     def __init__(self):
         """Classify Tool"""
-        self.label = "4 Post Processing - Density Filter"
+        self.label = "4 Density Filtering Tool"
         self.description = "Post Processing - Density Filter"
         self.canRunInBackground = True
 

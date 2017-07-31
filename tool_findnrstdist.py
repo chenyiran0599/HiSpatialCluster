@@ -17,7 +17,7 @@ import sys
 class FindNrstDistTool(object):
     def __init__(self):
         """Find Point with Higher Density Tool"""
-        self.label = "2 Find Points with Higher Density Tool"
+        self.label = "2 Finding Nearest High-Density Points Tool"
         self.description = "Find Points with Higher Density for HiSpatialCluster."
         self.canRunInBackground = True
 

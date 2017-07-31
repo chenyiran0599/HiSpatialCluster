@@ -15,7 +15,7 @@ import sys
 class CalculateDensityTool(object):
     def __init__(self):
         """Calculate Density Tool"""
-        self.label = "1 Calculate Density Tool"
+        self.label = "1 Calculating Density Tool"
         self.description = "Calculate Density for HiSpatialCluster."
         self.canRunInBackground = True
 
