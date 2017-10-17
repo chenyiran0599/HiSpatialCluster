@@ -31,6 +31,8 @@ Or right click the toolbox in "project panel", click "add toolbox" in ArcGIS Pro
 
 Follow the "example_work_with_postgis.py". It's prefered to use the Anaconda with python 3 64-bit.
 
+For more details about ArcGIS Python Toolbox, please see https://pro.arcgis.com/en/pro-app/arcpy/geoprocessing_and_python/a-quick-tour-of-python-toolboxes.htm (ArcGIS Pro) or https://desktop.arcgis.com/en/arcmap/latest/analyze/creating-tools/a-quick-tour-of-python-toolboxes.htm (ArcMap).
+
 ## Method Reference
 
  A. Rodriguez, A. Laio, "Clustering by fast search and find of density peaks", Science, vol. 344, no. 6191, pp. 1492-1496, 2014. 
