@@ -27,11 +27,11 @@ Create folder connection to the folder of source files in ArcGIS Desktop, and op
 
 Or right click the toolbox in "project panel", click "add toolbox" in ArcGIS Pro, and choose the file "toolbox_hi_spatial_cluster.pyt".
 
+For more details about ArcGIS Python Toolbox, please see https://pro.arcgis.com/en/pro-app/arcpy/geoprocessing_and_python/a-quick-tour-of-python-toolboxes.htm (ArcGIS Pro) or https://desktop.arcgis.com/en/arcmap/latest/analyze/creating-tools/a-quick-tour-of-python-toolboxes.htm (ArcMap).
+
 ### for python scripts
 
 Follow the "example_work_with_postgis.py". It's prefered to use the Anaconda with python 3 64-bit.
-
-For more details about ArcGIS Python Toolbox, please see https://pro.arcgis.com/en/pro-app/arcpy/geoprocessing_and_python/a-quick-tour-of-python-toolboxes.htm (ArcGIS Pro) or https://desktop.arcgis.com/en/arcmap/latest/analyze/creating-tools/a-quick-tour-of-python-toolboxes.htm (ArcMap).
 
 ## Method Reference
 
