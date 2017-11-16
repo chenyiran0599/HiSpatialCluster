@@ -9,7 +9,7 @@ All Package Requirements has been met with ArcGIS 10.1 and later or ArcGIS Pro.
 
 CUDA 7.5 or later; numba and cudatoolkit; python 64bit (using arcgis pro for python 64bit)
 
-Install cudatoolkit in Python with Anaconda: conda insall -c numba cudatoolkit=8.0(if with CUDA 8.0)
+Install cudatoolkit in Python with Anaconda: conda install -c numba cudatoolkit=8.0(if with CUDA 8.0)
 
 Or install with unofficial binaries for python extension packages to avoid compiling llvmlite
 
