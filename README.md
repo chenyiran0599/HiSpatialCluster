@@ -49,7 +49,5 @@ Follow the "example_work_with_postgis.py". It's prefered to use the Anaconda wit
 
 ## Method Reference
 
- A. Rodriguez, A. Laio, "Clustering by fast search and find of density peaks", Science, vol. 344, no. 6191, pp. 1492-1496, 2014. 
-
-https://doi.org/10.1126/science.1242072
+ Chen Y, Huang Z, Pei T, Liu Y. HiSpatialCluster: A novel high-performance software tool for clustering massive spatial points. *Transactions in GIS*. 2018;00:1-24. https://doi.org/10.1111/tgis.12463
 
